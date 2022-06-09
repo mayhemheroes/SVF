@@ -1,0 +1,7 @@
+project: svf
+target: wpa
+testsuite:
+  - file://test.bc
+cmds:
+  - cmd: /repo/Release-build/bin/wpa -ander /test.bc
+    filepath: /test.bc
