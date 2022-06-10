@@ -1,7 +1,7 @@
 project: svf
-target: wpa
+target: saver
 testsuite:
   - file://test.bc
 cmds:
-  - cmd: /repo/Release-build/bin/wpa -ander /test.bc
+  - cmd: /repo/Release-build/bin/saber /test.bc
     filepath: /test.bc
