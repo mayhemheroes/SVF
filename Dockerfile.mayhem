@@ -17,5 +17,5 @@ RUN ldd /repo/Release-build/bin/wpa | tr -s '[:blank:]' '\n' | grep '^/' | xargs
 FROM ubuntu:22.04 as package
 
 COPY --from=builder /deps /deps
-COPY --from=builder /repo/Release-build/bin/wpa /repo/Release-build/bin/wpa
+COPY --from=builder /repo/Release-build/bin/saber /repo/Release-build/bin/saber
 ENV LD_LIBRARY_PATH=/deps
