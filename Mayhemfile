@@ -3,5 +3,4 @@ target: saber
 testsuite:
   - file://test.bc
 cmds:
-  - cmd: /repo/Release-build/bin/saber /test.bc
-    filepath: /test.bc
+  - cmd: /saber @@
