@@ -36,6 +36,7 @@
 
 using namespace SVF;
 using namespace SVFUtil;
+using namespace LLVMUtil;
 
 /*!
  * Add offset value to vector offsetValues
@@ -72,7 +73,7 @@ u32_t LocationSet::getElementNum(const Type* type) const
     {
         /// This is a pointer arithmic
         if(const PointerType* pty = SVFUtil::dyn_cast<PointerType>(type))
-            return getElementNum(pty->getElementType());
+            return getElementNum(getPtrElementType(pty));
         else
             return 1;
     }
@@ -89,7 +90,7 @@ u32_t LocationSet::getElementNum(const Type* type) const
 /// "value" is the offset variable (must be a constant)
 /// "type" is the location where we want to compute offset
 /// Given a vector: [(value1,type1), (value2,type2), (value3,type3)]
-/// totalConstOffset = flattenOffset(value1,type1) * flattenOffset(type2,type2) + flattenOffset(type3,type3)
+/// totalConstOffset = flattenOffset(value1,type1) * flattenOffset(value2,type2) + flattenOffset(value3,type3)
 /// For a pointer type (e.g., t1 is PointerType), we will retrieve the pointee type and times the offset, i.e., getElementNum(t1) X off1
 
 /// For example,
@@ -134,7 +135,7 @@ s32_t LocationSet::accumulateConstantOffset() const
         }
 
         if(const PointerType* pty = SVFUtil::dyn_cast<PointerType>(type))
-            totalConstOffset += op->getSExtValue() * getElementNum(pty->getElementType());
+            totalConstOffset += op->getSExtValue() * getElementNum(getPtrElementType(pty));
         else
         {
             s32_t offset = op->getSExtValue();

@@ -1,6 +1,7 @@
 Release*/
 Debug*/
 build/
+include/Util/config.h
 html/
 Test-Suite/
 Release+Asserts/
@@ -20,3 +21,4 @@ doxygen/
 *.status
 *.obj
 *.svf
+cmake-build-debug/

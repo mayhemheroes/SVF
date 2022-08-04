@@ -34,6 +34,10 @@
 
 using namespace SVF;
 
+CFLGraph::Kind CFLGraph::getStartKind() const
+{
+    return this->startKind;
+}
 
 void CFLGraph::addCFLNode(NodeID id, CFLNode* node)
 {
@@ -73,54 +77,10 @@ void CFLGraph::view()
     llvm::ViewGraph(this, "CFL Graph");
 }
 
-void CFLGraph::setMap(GrammarBase *grammar)
-{
-    externMap = true;
-    for(auto pairV : grammar->terminals)
-    {
-        if(label2SymMap.find(pairV.first) == label2SymMap.end())
-        {
-            label2SymMap.insert(pairV);
-        }
-        if(sym2LabelMap.find(pairV.second) == sym2LabelMap.end())
-        {
-            sym2LabelMap.insert(make_pair(pairV.second, pairV.first));
-        }
-    }
-
-    for(auto pairV : grammar->nonterminals)
-    {
-        if(label2SymMap.find(pairV.first) == label2SymMap.end())
-        {
-            label2SymMap.insert(pairV);
-        }
-        if(sym2LabelMap.find(pairV.second) == sym2LabelMap.end())
-        {
-            sym2LabelMap.insert(make_pair(pairV.second, pairV.first));
-        }
-    }
-}
-
-void CFLGraph::setMap(Map<std::string, Symbol> &labelMap)
-{
-    externMap = true;
-    for(auto pairV : labelMap)
-    {
-        if(label2SymMap.find(pairV.first) == label2SymMap.end())
-        {
-            label2SymMap.insert(pairV);
-        }
-        if(sym2LabelMap.find(pairV.second) == sym2LabelMap.end())
-        {
-            sym2LabelMap.insert(make_pair(pairV.second, pairV.first));
-        }
-    }
-}
-
 namespace llvm
 {
 /*!
- * Write value flow graph into dot file for debugging
+ * Write CFL graph into dot file for debugging
  */
 template<>
 struct DOTGraphTraits<CFLGraph*> : public DefaultDOTGraphTraits
@@ -158,20 +118,38 @@ struct DOTGraphTraits<CFLGraph*> : public DefaultDOTGraphTraits
         assert(edge && "No edge found!!");
         std::string str;
         raw_string_ostream rawstr(str);
-        std::string key = "";
-        for (auto &i : graph->label2SymMap)
+        if (edge->getEdgeKind() == ConstraintEdge::Addr)
         {
-            if (i.second == edge->getEdgeKind())
-            {
-                key = i.first;
-            }
+            rawstr << "color=green";
         }
-        rawstr << "label=" << '"' <<key << '"';
-        if( graph->label2SymMap[key] == graph->startSymbol)
+        else if (edge->getEdgeKind() == ConstraintEdge::Copy)
         {
-            rawstr << ',' << "color=red";
+            rawstr << "color=black";
         }
-
+        else if (edge->getEdgeKindWithMask() == ConstraintEdge::NormalGep)
+        {
+            rawstr << "color=purple,label=" << '"' << "Gep_" << edge->getEdgeAttri() << '"';
+        }
+        else if (edge->getEdgeKindWithMask() == ConstraintEdge::VariantGep)
+        {
+            rawstr << "color=purple,label=" << '"' << "VGep" << '"';
+        }
+        else if (edge->getEdgeKind() == ConstraintEdge::Store)
+        {
+            rawstr << "color=blue";
+        }
+        else if (edge->getEdgeKind() == ConstraintEdge::Load)
+        {
+            rawstr << "color=red";
+        }
+        else if (edge->getEdgeKind() == graph->getStartKind())
+        {
+            rawstr << "color=Turquoise";
+        }
+        else
+        {
+            rawstr  << "style=invis";
+        }
         return rawstr.str();
     }
 

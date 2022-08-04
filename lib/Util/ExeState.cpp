@@ -28,12 +28,11 @@
 #include "Util/ExeState.h"
 #include "MemoryModel/SVFIR.h"
 #include <iomanip>
-#include "SVF-FE/LLVMUtil.h"
+#include "Util/SVFUtil.h"
 
 using namespace SVF;
 using namespace SVFUtil;
 
-z3::context *Z3Expr::ctx = nullptr;
 
 /*!
  * Init Z3Expr for ValVar

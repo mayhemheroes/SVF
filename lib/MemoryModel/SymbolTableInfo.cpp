@@ -33,12 +33,12 @@
 #include "MemoryModel/SymbolTableInfo.h"
 #include "Util/Options.h"
 #include "Util/SVFModule.h"
-#include "Util/SVFUtil.h"
 #include "SVF-FE/LLVMUtil.h"
 
 using namespace std;
 using namespace SVF;
 using namespace SVFUtil;
+using namespace LLVMUtil;
 
 SymbolTableInfo* SymbolTableInfo::symInfo = nullptr;
 
@@ -323,46 +323,17 @@ void SymbolTableInfo::destroy()
  */
 bool SymbolTableInfo::isNullPtrSym(const Value *val)
 {
-    if (const Constant* v = SVFUtil::dyn_cast<Constant>(val))
-    {
-        return v->isNullValue() && v->getType()->isPointerTy();
-    }
-    return false;
+    return symInfo->nullPtrSyms.find(val)!=symInfo->nullPtrSyms.end();
 }
 
 /*!
- * Check whether this value points-to a constant object
+ * Check whether this value is blackhole object
  */
-bool SymbolTableInfo::isConstantObjSym(const Value *val)
+bool SymbolTableInfo::isBlackholeSym(const Value *val)
 {
-    if (const GlobalVariable* v = SVFUtil::dyn_cast<GlobalVariable>(val))
-    {
-        if (cppUtil::isValVtbl(v))
-            return false;
-        else if (!v->hasInitializer())
-        {
-            if(v->isExternalLinkage(v->getLinkage()))
-                return false;
-            else
-                return true;
-        }
-        else
-        {
-            StInfo *stInfo = getStructInfo(v->getInitializer()->getType());
-            const std::vector<const Type*> &fields = stInfo->getFlattenFieldTypes();
-            for (std::vector<const Type*>::const_iterator it = fields.begin(), eit = fields.end(); it != eit; ++it)
-            {
-                const Type *elemTy = *it;
-                assert(!SVFUtil::isa<FunctionType>(elemTy) && "Initializer of a global is a function?");
-                if (SVFUtil::isa<PointerType>(elemTy))
-                    return false;
-            }
-
-            return v->isConstant();
-        }
-    }
-    return SVFUtil::isConstantData(val);
+    return symInfo->blackholeSyms.find(val)!=symInfo->blackholeSyms.end();
 }
+
 
 
 MemObj* SymbolTableInfo::createBlkObj(SymID symId)
@@ -406,7 +377,7 @@ u32_t SymbolTableInfo::getFlattenedElemIdx(const Type *T, u32_t origId)
     if(Options::ModelArrays)
     {
         std::vector<u32_t>& so = getStructInfoIter(T)->second->getFlattenedElemIdxVec();
-        assert ((unsigned)origId <= so.size() && !so.empty() && "element index out of bounds, can't get flattened index!");
+        assert ((unsigned)origId < so.size() && !so.empty() && "element index out of bounds, can't get flattened index!");
         return so[origId];
     }
     else
@@ -414,7 +385,7 @@ u32_t SymbolTableInfo::getFlattenedElemIdx(const Type *T, u32_t origId)
         if(SVFUtil::isa<StructType>(T))
         {
             std::vector<u32_t>& so = getStructInfoIter(T)->second->getFlattenedFieldIdxVec();
-            assert ((unsigned)origId <= so.size() && !so.empty() && "Struct index out of bounds, can't get flattened index!");
+            assert ((unsigned)origId < so.size() && !so.empty() && "Struct index out of bounds, can't get flattened index!");
             return so[origId];
         }
         else
@@ -437,13 +408,13 @@ const Type* SymbolTableInfo::getFlatternedElemType(const Type* baseType, u32_t f
     if(Options::ModelArrays)
     {
         const std::vector<const Type*>& so = getStructInfoIter(baseType)->second->getFlattenElementTypes();
-        assert (flatten_idx <= so.size() && !so.empty() && "element index out of bounds, can't get element type!");
+        assert (flatten_idx < so.size() && !so.empty() && "element index out of bounds or struct opaque type, can't get element type!");
         return so[flatten_idx];
     }
     else
     {
         const std::vector<const Type*>& so = getStructInfoIter(baseType)->second->getFlattenFieldTypes();
-        assert (flatten_idx <= so.size() && !so.empty() && "element index out of bounds, can't get element type!");
+        assert (flatten_idx < so.size() && !so.empty() && "element index out of bounds or struct opaque type, can't get element type!");
         return so[flatten_idx];
     }
 }
@@ -490,7 +461,7 @@ void SymbolTableInfo::printFlattenFields(const Type* type)
 
     else if (const PointerType* pt= SVFUtil::dyn_cast<PointerType> (type))
     {
-        u32_t eSize = getNumOfFlattenElements(pt->getElementType());
+        u32_t eSize = getNumOfFlattenElements(getPtrElementType(pt));
         outs() << "  {Type: ";
         outs() << type2String(pt);
         outs() << "}\n";
@@ -614,18 +585,23 @@ bool ObjTypeInfo::isNonPtrFieldObj(const LocationSet& ls)
         return true;
 
     const Type* ety = getType();
-    while (const ArrayType *AT= SVFUtil::dyn_cast<ArrayType>(ety))
-    {
-        ety = AT->getElementType();
-    }
 
     if (SVFUtil::isa<StructType>(ety) || SVFUtil::isa<ArrayType>(ety))
     {
-        const Type* elemTy = SymbolTableInfo::SymbolInfo()->getFlatternedElemType(ety, ls.accumulateConstantFieldIdx());
-        if(elemTy->isPointerTy())
-            return false;
+        u32_t sz = 0;
+        if(Options::ModelArrays)
+            sz = SymbolTableInfo::SymbolInfo()->getStructInfoIter(ety)->second->getFlattenElementTypes().size();
         else
-            return true;
+            sz = SymbolTableInfo::SymbolInfo()->getStructInfoIter(ety)->second->getFlattenFieldTypes().size();
+
+        if(sz <= (u32_t)ls.accumulateConstantFieldIdx())
+        {
+            writeWrnMsg("out of bound error when accessing the struct/array");
+            return false;
+        }
+
+        const Type* elemTy = SymbolTableInfo::SymbolInfo()->getFlatternedElemType(ety, ls.accumulateConstantFieldIdx());
+        return (elemTy->isPointerTy() == false);
     }
     else
     {
@@ -792,7 +768,7 @@ SymID SymbolTableInfo::getValSym(const Value *val)
 
     if(SymbolTableInfo::isNullPtrSym(val))
         return nullPtrSymID();
-    else if (SVFUtil::isBlackholeSym(val))
+    else if (SymbolTableInfo::isBlackholeSym(val))
         return blkPtrSymID();
     else
     {
@@ -804,7 +780,7 @@ SymID SymbolTableInfo::getValSym(const Value *val)
 
 bool SymbolTableInfo::hasValSym(const Value* val)
 {
-    if (SymbolTableInfo::isNullPtrSym(val) || SVFUtil::isBlackholeSym(val))
+    if (SymbolTableInfo::isNullPtrSym(val) || SymbolTableInfo::isBlackholeSym(val))
         return true;
     else
         return (valSymMap.find(val) != valSymMap.end());
