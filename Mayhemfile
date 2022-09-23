@@ -1,6 +1,5 @@
 project: svf
 target: saber
-testsuite:
-  - file://test.bc
+
 cmds:
   - cmd: /saber @@
