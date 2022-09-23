@@ -12,4 +12,5 @@ RUN apt-get update
 RUN DEBIAN_FRONTEND=noninteractive apt-get install -y nodejs npm
 COPY --from=builder /repo/Release-build/bin/saber /
 COPY --from=builder /repo/include /include
+COPY --from=builder /repo/testsuite /testsuite
 
