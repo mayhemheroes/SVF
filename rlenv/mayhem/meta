@@ -1,0 +1,12 @@
+{
+  "workspace": "mayhemheroes",
+  "project": "svf",
+  "target": "saber",
+  "run_id": "59",
+  "ci_url": "https://github.com:443/mayhemheroes/SVF/actions/runs/3489667615",
+  "run_image_name": "ghcr.io/mayhemheroes/svf:master",
+  "run_image_with_digest": "ghcr.io/mayhemheroes/svf@sha256:09ffd5ad9356e703eeb24b9ac3327f5755a2eff56af7b02733574edc2b35b6ae",
+  "git_repo_url": "git@github.com:mayhemheroes/SVF.git",
+  "git_revision": "1a1999f5a4683d6bea74bcf18b1c53375d4787fe",
+  "target_executable": "/saber"
+}

@@ -1,0 +1,42 @@
+FROM --platform=linux/amd64 ubuntu:22.04
+
+# Install all dependencies (build-time and runtime)
+RUN apt-get update && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y \
+    build-essential \
+    cmake \
+    curl \
+    unzip \
+    libtinfo-dev \
+    libncurses5-dev \
+    libz-dev \
+    nodejs \
+    npm \
+    xz-utils \
+    wget \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy source code to /rlenv/source/svf/
+COPY . /rlenv/source/svf/
+
+# Set working directory
+WORKDIR /rlenv/source/svf
+
+# Build the application
+# The build.sh script will:
+# 1. Download LLVM 13.0.0 binaries (or build from source on ARM)
+# 2. Download Z3 4.8.8 binaries (or build from source on ARM)
+# 3. Build SVF using cmake
+RUN ./build.sh
+
+# Copy build artifacts to expected locations for compatibility
+RUN cp /rlenv/source/svf/Release-build/bin/saber / && \
+    cp -r /rlenv/source/svf/include /include && \
+    cp -r /rlenv/source/svf/testsuite /testsuite
+
+# Copy the rlenv directory from build context to /rlenv in the image
+# This must be done last to ensure the source directory doesn't get overwritten
+COPY rlenv/ /rlenv/
+
+# Set working directory back to /rlenv/source/svf for patching
+WORKDIR /rlenv/source/svf
