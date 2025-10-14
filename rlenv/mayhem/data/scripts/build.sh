@@ -40,8 +40,8 @@ make -j ${jobs}
 # Return to source root
 cd ../
 
-# Set up SVF environment variables
-. ./setup.sh
+# Set up SVF environment variables (passing 'release' parameter)
+. ./setup.sh release
 
 # Copy build artifacts to expected locations
 echo "Copying build artifacts to expected locations..."
