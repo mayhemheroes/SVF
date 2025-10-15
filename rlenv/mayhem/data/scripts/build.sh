@@ -49,6 +49,13 @@ cp ./Release-build/bin/saber /
 cp -r ./include /include
 cp -r ./testsuite /testsuite
 
+# Ensure all output locations are world-writable and world-executable
+# This allows the build script to succeed even when run as an unprivileged user
+echo "Setting permissions on build artifacts..."
+chmod 777 /saber
+chmod -R 777 /include
+chmod -R 777 /testsuite
+
 echo "Build completed successfully!"
 
 # Verify build artifacts exist

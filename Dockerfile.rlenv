@@ -32,7 +32,11 @@ RUN ./build.sh
 # Copy build artifacts to expected locations for compatibility
 RUN cp /rlenv/source/svf/Release-build/bin/saber / && \
     cp -r /rlenv/source/svf/include /include && \
-    cp -r /rlenv/source/svf/testsuite /testsuite
+    cp -r /rlenv/source/svf/testsuite /testsuite && \
+    chmod 777 /saber && \
+    chmod -R 777 /include && \
+    chmod -R 777 /testsuite && \
+    chmod -R 777 /rlenv/source
 
 # Copy the rlenv directory from build context to /rlenv in the image
 # This must be done last to ensure the source directory doesn't get overwritten
