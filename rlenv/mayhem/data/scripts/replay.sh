@@ -7,4 +7,5 @@ if [ $# -ne 1 ]; then
     exit 1
 fi
 
-/saber $1
+ulimit -v 8388608
+timeout 2 /saber $1
