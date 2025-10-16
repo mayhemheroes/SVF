@@ -40,9 +40,9 @@ cd ../
 # These locations must be writable by unprivileged users (set up during Docker build)
 echo "Copying build artifacts to expected locations..."
 if [ -w / ]; then
-    cp ./Release-build/bin/saber /
-    cp -r ./include /include
-    cp -r ./testsuite /testsuite
+    cp -f ./Release-build/bin/saber /
+    cp -rf ./include /include
+    cp -rf ./testsuite /testsuite
 else
     echo "Warning: Root filesystem not writable. Artifacts remain in build directory."
 fi
