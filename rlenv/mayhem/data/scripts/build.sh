@@ -40,7 +40,8 @@ cd ../
 # These locations must be writable by unprivileged users (set up during Docker build)
 echo "Copying build artifacts to expected locations..."
 if [ -w / ]; then
-    cp -f ./Release-build/bin/saber /
+    # Use cat for busybox compatibility when we can't remove the file
+    cat ./Release-build/bin/saber > /saber
     cp -rf ./include /include
     cp -rf ./testsuite /testsuite
 else
