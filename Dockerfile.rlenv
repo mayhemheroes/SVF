@@ -52,5 +52,4 @@ COPY rlenv/ /rlenv/
 # This is critical for allowing unprivileged users to rebuild the application
 RUN chmod -R 777 /rlenv/source
 
-# Set working directory back to /rlenv/source/svf for patching
-WORKDIR /rlenv/source/svf
+WORKDIR /
