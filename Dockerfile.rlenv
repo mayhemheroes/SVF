@@ -41,7 +41,7 @@ RUN ./build.sh
 RUN cp /rlenv/source/svf/Release-build/bin/saber / && \
     cp -r /rlenv/source/svf/include /include && \
     cp -r /rlenv/source/svf/testsuite /testsuite && \
-    chmod 777 /saber && \
+    chmod 766 /saber && \
     chmod -R 777 /include && \
     chmod -R 777 /testsuite
 
