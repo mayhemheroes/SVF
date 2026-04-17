@@ -1,0 +1,5 @@
+project: svf
+target: saber
+
+cmds:
+  - cmd: /saber @@
