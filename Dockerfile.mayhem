@@ -1,17 +1,12 @@
-FROM --platform=linux/amd64 ubuntu:22.04 as builder
+FROM --platform=linux/amd64 ubuntu:22.04
 
-RUN apt-get update
-RUN DEBIAN_FRONTEND=noninteractive apt-get install -y build-essential curl unzip libtinfo-dev libncurses5-dev libz-dev python3-pip
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y \
+    build-essential curl unzip libtinfo-dev libncurses5-dev libz-dev python3-pip libxml2
+
 RUN pip3 install --only-binary :all: cmake
 
 COPY . /repo
 WORKDIR /repo
-RUN ./build.sh
+RUN ./build.sh && cp /repo/Release-build/bin/saber /saber
 
-FROM ubuntu:22.04 as package
-RUN apt-get update
-RUN DEBIAN_FRONTEND=noninteractive apt-get install -y nodejs npm
-COPY --from=builder /repo/Release-build/bin/saber /
-COPY --from=builder /repo/include /include
-COPY --from=builder /repo/testsuite /testsuite
-
+ENV LD_LIBRARY_PATH=/repo/llvm-18.1.0.obj/lib:/repo/z3.obj/bin:/repo/Release-build/svf:/repo/Release-build/svf-llvm
